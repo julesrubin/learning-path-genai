@@ -1,1 +1,49 @@
-# TODO
+steps:
+  # Project initialization - creates tfstate bucket if needed
+  - id: 'project-init'
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: sh
+    args:
+      - '-c'
+      - |
+        echo "***********************"
+        echo "project           : $PROJECT_ID"
+        echo "branch            : $BRANCH_NAME"
+        echo "***********************"
+        cd iac/init
+        chmod +x init.sh
+        ./init.sh ${PROJECT_ID}
+
+  # Terraform init
+  - id: 'terraform-init'
+    name: 'hashicorp/terraform:1.14.1'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd iac
+        terraform init -input=false -no-color -upgrade -backend-config=init/backend.tfvars
+
+  # Terraform plan
+  - id: 'terraform-plan'
+    name: 'hashicorp/terraform:1.14.1'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd iac
+        terraform plan -out=changes.tfplan -var project_id=$PROJECT_ID
+
+  # Terraform apply
+  - id: 'terraform-apply'
+    name: 'hashicorp/terraform:1.14.1'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd iac
+        terraform apply -input=false -no-color -auto-approve changes.tfplan
+
+timeout: 5400s
+options:
+  logging: CLOUD_LOGGING_ONLY
