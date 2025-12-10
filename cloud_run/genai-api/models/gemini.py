@@ -26,4 +26,6 @@ class TemperatureResponse(BaseModel):
 
 class TokenAnalysisResponse(BaseModel):
     token_count: int
-    prompt: str
+    estimated_cost_usd: float | None = None
+    context_usage_percent: float | None = None
+    warnings: list[str] | None = None

@@ -89,20 +89,43 @@ class GeminiClient:
 
         return responses
 
-    def count_tokens(self, prompt: str, model_name: str | None = None) -> int:
+    def token_analysis(self, prompt: str) -> dict[str, int | float | list[str]]:
         """
-        Count the number of tokens in a prompt.
-
+        Analyze token usage, estimated cost, and context window for a given prompt.
         Args:
             prompt: The text to analyze
-            model_name: Optional model name (defaults to instance model)
-
         Returns:
-            Total token count
+            Dictionary with token count, estimated cost, context usage percent, and warnings
         """
-        model = model_name or self.model_name
-        response = self.client.models.count_tokens(
-            model=model,
-            contents=prompt,
-        )
-        return response.total_tokens
+
+        # Pricing per 1M tokens (approximate, check current pricing)
+        # https://cloud.google.com/vertex-ai/generative-ai/pricing
+        PRICING = {
+            "gemini-2.5-flash": {"input": 0.30, "output": 2.50},
+            "gemini-3.0-pro": {"input": 2.0, "output": 12.0},
+        }
+        CONTEXT_WINDOWS = {
+            "gemini-2.5-flash": 1_000_000,
+            "gemini-3.0-pro": 1_000_000,
+        }
+
+        token_count = self.client.models.count_tokens(
+            model=self.model_name, contents=prompt
+        ).total_tokens
+        
+        estimated_cost = (token_count / 1_000_000) * PRICING[self.model_name][
+            "input"
+        ]
+
+        context_usage_percent = (token_count / CONTEXT_WINDOWS[self.model_name]) * 100
+        warnings = []
+        if context_usage_percent > 80:
+            warnings.append("Approaching context limit (>80%)")
+        if context_usage_percent > 95:
+            warnings.append("Critical: Very close to context limit (>95%)")
+        return {
+            "token_count": token_count,
+            "estimated_cost_usd": round(estimated_cost, 6),
+            "context_usage_percent": round(context_usage_percent, 2),
+            "warnings": warnings,
+        }
