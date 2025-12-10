@@ -121,6 +121,10 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/artifactregistry.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/logging.logWriter"
 ```
 
 ### 9. Set Up Cloud Build Trigger
