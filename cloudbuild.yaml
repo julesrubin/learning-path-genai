@@ -1,3 +1,7 @@
+substitutions:
+  _SERVICES_TO_BUILD: 'genai-api'
+  _REGION: 'europe-west1'
+
 steps:
   # Project initialization - creates tfstate bucket if needed
   - id: 'project-init'
@@ -13,6 +17,28 @@ steps:
         cd iac/init
         chmod +x init.sh
         ./init.sh ${PROJECT_ID}
+
+  # Build and push Docker images for Cloud Run services
+  - id: 'docker-build-push'
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ -z "${_SERVICES_TO_BUILD}" ]; then
+          echo "No services to build (_SERVICES_TO_BUILD is empty). Skipping..."
+          exit 0
+        fi
+
+        REPO="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${PROJECT_ID}-gcr-learning-path-genai"
+
+        for SERVICE in ${_SERVICES_TO_BUILD}; do
+          echo "========================================"
+          echo "Building and pushing: $${SERVICE}"
+          echo "========================================"
+          DOCKER_BUILDKIT=1 docker build -t "$${REPO}/$${SERVICE}:latest" -t "$${REPO}/$${SERVICE}:${SHORT_SHA}" "cloud_run/$${SERVICE}"
+          docker push "$${REPO}/$${SERVICE}" --all-tags
+        done
 
   # Terraform init
   - id: 'terraform-init'
@@ -47,3 +73,4 @@ steps:
 timeout: 5400s
 options:
   logging: CLOUD_LOGGING_ONLY
+serviceAccount: 'projects/$PROJECT_ID/serviceAccounts/build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com'
