@@ -101,39 +101,42 @@ gcloud services enable \
   --project $PROJECT_ID
 ```
 
-### 8 Create a Service Account for Cloud Build
+### 8. Create a Service Account for Cloud Build
 ```bash
 gcloud iam service-accounts create build-learning-path-sa \
   --display-name="Cloud Build Service Account" \
   --project=$PROJECT_ID
 ```
 
-We also need to grant the service account the first necessary roles:
+Grant the service account the necessary bootstrap roles (these are required before terraform can run):
 ```bash
+# Storage admin - for terraform state bucket
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.admin"
 
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/run.admin"
-
+# Artifact Registry admin - to create repos and push images
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/artifactregistry.admin"
 
+# Logs writer - for Cloud Build logs
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/logging.logWriter"
 
+# Service Account Admin - to create service accounts via terraform
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountAdmin"
 
+# Project IAM Admin - to grant roles to service accounts via terraform
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/resourcemanager.projectIamAdmin"
 ```
+
+> **Note**: Additional permissions (like Cloud Run admin and Vertex AI access) are managed by Terraform in `iac/iam.tf`.
 
 ### 9. Set Up Cloud Build Trigger
 1. Go to Cloud Build in GCP Console
