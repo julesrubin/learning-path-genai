@@ -29,46 +29,154 @@ But first, you need to understand the technology you're working with.
 
 ### How LLMs Work
 
-Before writing any code, invest time understanding the fundamentals.
+Before writing any code, invest time understanding the fundamentals. Large Language Models are built on **transformer architecture** using self-attention mechanisms to process and generate text. Understanding these core concepts will help you make better decisions when building AI applications.
+
+> [!TIP]
+> For an interactive visual exploration of how generative AI works, check out the [Financial Times' Generative AI Explainer](https://ig.ft.com/generative-ai/) - it provides excellent visualizations of the technology behind LLMs.
 
 #### Tokens and Tokenization
 
-LLMs don't see text the way humans do - they process **tokens** (subword units):
+LLMs don't see text the way humans do - they process **tokens**, which are subword units that form the basic building blocks of language understanding:
+
+**How Tokenization Works:**
 - The word "tokenization" might become `["token", "ization"]`
-- Different models use different tokenizers
-- Token count directly affects cost and context limits
+- Common words are often single tokens: "the", "is", "cat"
+- Rare or compound words are split: "uncommon" → `["un", "common"]`
+- Numbers and special characters have their own tokenization rules
+- **Multilingual impact**: Non-Latin scripts (Chinese, Arabic, Russian) typically require more tokens per word, affecting costs
+
+**Why Tokens Matter:**
+- **Cost**: Most LLM APIs charge per token (input + output)
+- **Context limits**: Models have maximum token counts (e.g., 1M tokens for Gemini)
+- **Performance**: More tokens = longer processing time
+- **Quality**: Token boundaries can affect model understanding of rare words or specialized terminology
+
+**Real-world example**:
+- English: "Hello, how are you?" = ~6 tokens
+- French: "Bonjour, comment allez-vous?" = ~8 tokens
+- Japanese: "こんにちは、お元気ですか？" = ~15+ tokens
 
 > [!TIP]
-> Use the [Gemini tokenizer playground](https://ai.google.dev/gemini-api/docs/tokens) to see how your text gets tokenized.
+> Use the [Gemini tokenizer playground](https://ai.google.dev/gemini-api/docs/tokens) to see how your text gets tokenized. This is essential for estimating costs and understanding context usage.
 
 #### Embeddings and Vector Space
 
-Text is converted to high-dimensional vectors called **embeddings**:
-- Semantically similar text has similar vectors
-- This mathematical representation enables similarity search
-- Embeddings are the foundation of RAG (Chapters 4-5)
+Text is converted to high-dimensional vectors called **embeddings** - numerical representations that capture semantic meaning:
+
+**Core Concepts:**
+- **Dimensionality**: Embeddings typically have 768 to 3072 dimensions (think of it as coordinates in a 768-dimensional space)
+- **Semantic similarity**: Words with similar meanings cluster together in vector space
+  - "king" and "monarch" have vectors close to each other
+  - "king" and "bicycle" have vectors far apart
+- **Mathematical operations**: You can do arithmetic with embeddings
+  - `king - man + woman ≈ queen`
+
+> [!TIP]
+> See [this article](https://medium.com/@manansuri/a-dummys-guide-to-word2vec-456444f3c673) for an accessible introduction to word embeddings and how they capture meaning.
+
+**Practical Applications:**
+- **Semantic search**: Find documents by meaning, not just keywords
+  - Query: "how to fix water damage" matches "repairing flood issues"
+- **Recommendation systems**: Find similar products or content
+- **Clustering**: Group similar customer inquiries automatically
+- **RAG (Retrieval-Augmented Generation)**: Core technology for Chapters 4-5
+  - Store document embeddings in vector databases
+  - Retrieve relevant context based on query similarity
+
+**Distance Metrics:**
+- **Cosine similarity**: Measures angle between vectors (most common)
+- **Euclidean distance**: Straight-line distance in vector space
+- **Dot product**: Fast approximation for normalized vectors
+
+> [!NOTE]
+> Embeddings are why StyleCo can implement semantic search for their product catalog - customers can search "summer dress for beach wedding" and find relevant products even if those exact words don't appear in product descriptions.
 
 #### Context Windows
 
-The context window is the "memory" of a conversation:
-- **Gemini 2.0 Flash**: up to 1M tokens
-- **Gemini 2.5 Pro**: up to 1M tokens
-- Larger context = higher cost and potentially slower responses
+The context window is the "memory" of a conversation - the total amount of text (in tokens) a model can process in a single request:
+
+**Current Capabilities:**
+- **Gemini 2.5 Flash**: up to 1M tokens (~750,000 words or ~1,500 pages)
+- **GPT-5.1**: up to 400K tokens
+- **Claude Opus 4.5**: up to 200K tokens
+
+**Context Window Economics:**
+- **Larger context = higher cost**: Processing 1M tokens costs significantly more than 10K
+- **Latency impact**: More tokens to process = slower response times
+- **Quality degradation**: Models may struggle to maintain coherence across very long contexts (see ["lost in the middle" problem](https://arxiv.org/abs/2307.03172))
+
+**What Happens When You Exceed Context:**
+- Request fails with error (hard limit)
+- Need to truncate or summarize earlier messages
+- Implement sliding window approach (keep recent context, drop old)
+
+**Strategic Context Management:**
+- **Conversation summarization**: Periodically compress chat history
+- **Selective context**: Only include relevant parts of long documents
+- **Context caching**: Reuse common context across requests
+- **Chunking strategies**: Break large documents into manageable pieces
 
 > [!IMPORTANT]
-> Strategic context management is crucial for production applications. You'll learn techniques for this throughout the learning path.
+> For StyleCo's customer service, context management is crucial. A customer with a 20-message conversation history will consume significant tokens. You'll learn techniques for efficient context management throughout the learning path, including conversation summarization, semantic chunking, and context compression.
+
+#### The Attention Mechanism
+
+While you don't need to understand the math, knowing about **attention** helps you understand LLM behavior:
+
+- **Self-attention**: The model learns which words in the input are relevant to each other
+- **Multi-head attention**: Multiple attention mechanisms run in parallel, capturing different relationships
+- **Why it matters**:
+  - Models can handle long-range dependencies ("the animal ... it" even with 100 words between)
+  - Attention patterns reveal what the model "focuses on" when generating responses
+  - Computational cost grows quadratically with sequence length (why context windows have limits)
 
 ### Prompting Techniques
 
-| Technique | Description | When to Use |
-|-----------|-------------|-------------|
-| **Zero-shot** | No examples, just instructions | Simple, well-defined tasks |
-| **Few-shot** | Include examples in prompt | When format/style matters |
-| **Chain-of-thought** | Ask model to reason step-by-step | Complex reasoning tasks |
-| **Role prompting** | Assign a persona | Consistent tone/expertise |
+Prompting is the primary way you "program" LLMs. Different techniques work better for different tasks:
+
+| Technique | Description | When to Use | Example |
+|-----------|-------------|-------------|---------|
+| **Zero-shot** | Direct instructions without examples | Simple, well-defined tasks with clear objectives | "Translate this to French: Hello" |
+| **Few-shot** | Include 2-5 example input/output pairs | When format, style, or structure matters; teaching pattern recognition | "Classify sentiment:\nReview: Great product! → Positive\nReview: Terrible quality. → Negative\nReview: It's okay. → ?" |
+| **Chain-of-thought (CoT)** | Instruct model to show reasoning steps before answering | Complex reasoning, math problems, multi-step analysis | "Let's solve this step by step:\n1. First identify...\n2. Then calculate...\n3. Finally conclude..." |
+
+**Advanced Prompting Patterns:**
+
+1. **System/User/Assistant structure**:
+   ```
+   System: You are a helpful assistant specializing in [domain]
+   User: [user's question]
+   Assistant: [model's response]
+   ```
+
+2. **Instruction + Context + Question** pattern:
+   ```
+   [Role/instruction]
+
+   Context: [Relevant background information]
+
+   Question: [Specific query]
+   ```
+
+3. **Output formatting instructions**:
+   ```
+   Respond in JSON format with keys: recommendation, reasoning, confidence_score
+   ```
+
+> [!TIP]
+> For StyleCo's customer service, you'll combine techniques: role prompting (fashion expert), few-shot examples (sample Q&A), and structured output (consistent response format).
+
+**Prompting Best Practices:**
+- **Be specific**: "Write a professional email" vs "Write a 150-word professional email declining a meeting request, maintaining positive tone"
+- **Provide constraints**: Length limits, format requirements, forbidden content
+- **Include examples**: Show don't tell - examples are more powerful than descriptions
+- **Iterate systematically**: Change one variable at a time to understand what works
+- **Test edge cases**: How does it handle ambiguous inputs, unusual requests, or missing information?
 
 #### Recommended Reading
 
+- [Google Gen AI SDK Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/sdks/overview) - Official SDK overview for Python, Go, Node.js, and Java
+- [Google Gen AI Python SDK Reference](https://googleapis.github.io/python-genai/) - Detailed Python API reference
 - [Google's Prompting Guide](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/prompts/introduction-prompt-design) - Official introduction to prompt design
 - [Prompt Design Strategies](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/prompts/prompt-design-strategies) - Best practices from Google
 - [Prompt Engineering Whitepaper (68 pages)](https://www.kaggle.com/whitepaper-prompt-engineering) - Comprehensive deep-dive from Google/Kaggle
@@ -103,15 +211,19 @@ Be aware of these inherent limitations - they will inform your design decisions:
 
 ### Project Structure
 
-Navigate to the `cloud_run/styleco_api` directory. A basic FastAPI application structure is provided:
+Navigate to the `cloud_run/genai-api` directory. A basic FastAPI application structure is provided:
 
 ```
 cloud_run/genai-api/
 ├── main.py              # FastAPI app entrypoint
+├── models/              # Pydantic models for request/response schemas
+│   └── __init__.py
+├── services/            # Business logic and Gemini API calls
+│   └── __init__.py
 ├── routers/             # Add your endpoints here
 │   └── __init__.py
 ├── pyproject.toml       # Python project configuration
-└── Dockerfile           # Container configuration
+└── Dockerfile           # Container configuration (you should not need to modify)
 ```
 
 ---
@@ -125,8 +237,8 @@ StyleCo stakeholders aren't convinced about GenAI yet. Your first task is to dem
 **Objective**: Create a `/hello_gemini` endpoint that accepts a prompt and returns Gemini's response.
 
 **Requirements**:
-- Accept a JSON body with the prompt and optional generation parameters
-- Make a call to Gemini using the Vertex AI SDK
+- Accept a JSON body with the prompt
+- Make a call to Gemini using the [Google Gen AI SDK](https://cloud.google.com/vertex-ai/generative-ai/docs/sdks/overview)
 - Return the model's response
 
 **Example request**:
@@ -134,6 +246,13 @@ StyleCo stakeholders aren't convinced about GenAI yet. Your first task is to dem
 curl -X POST http://localhost:8080/hello_gemini \
   -H "Content-Type: application/json" \
   -d '{"prompt": "What is the capital of France?"}'
+```
+
+**Example response**:
+```json
+{
+  "response": "The capital of France is Paris."
+}
 ```
 
 ---
@@ -145,7 +264,7 @@ Now that you've connected to Gemini, create a dedicated customer service assista
 **Objective**: Create a `/styleco_assistant` endpoint powered by a carefully crafted system prompt.
 
 **Requirements**:
-1. Create/adapt the prompt file `prompts/styleco_customer_service.txt` with these characteristics:
+1. Create/adapt the prompt file `cloud_run/genai-api/instructions/styleco_customer_service.txt` with these characteristics:
    - Professional but friendly tone
    - Knowledgeable about fashion and retail
    - Helpful with common customer queries
@@ -159,28 +278,6 @@ Now that you've connected to Gemini, create a dedicated customer service assista
 
 > [!WARNING]
 > Never hardcode system prompts in your application code. Externalize them for easier iteration and version control.
-
----
-
-### Prompting Technique Experiments
-
-StyleCo's team has complex questions that the basic assistant struggles with. They want you to experiment with advanced prompting techniques.
-
-**Objective**: Create a `/styleco_assistant_advanced` endpoint that handles complex, multi-faceted queries.
-
-**Test query**: 
-> "I'm going to a summer wedding in Italy. I'm a size M and prefer sustainable fashion. What should I wear?"
-
-**Requirements**:
-Implement at least two prompting techniques and compare results:
-
-1. **Few-shot prompting**: Include 2-3 example Q&A pairs in your prompt
-2. **Chain-of-thought**: Instruct the model to reason step-by-step before answering
-
-**Deliverable**: Document your observations in a `notes/chapter_01_experiments.md` file:
-- Which technique produced better recommendations?
-- How did response length and quality differ?
-- What trade-offs did you observe?
 
 ---
 
@@ -242,7 +339,7 @@ def analyze_prompt(prompt: str, model_name: str = "gemini-2.0-flash") -> dict:
 ### Final Task:
 
 As when it comes to cloud, nothing exists if it is not deployed to the cloud, deploy your FastAPI application to Cloud Run following best practices. See the terraform part in the iac/ folder.
-See the Cloud Build triggering when pushing to your branch.
+You should see the Cloud Build triggering when pushing to your branch.
 
 ---
 
