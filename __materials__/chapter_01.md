@@ -216,6 +216,8 @@ Navigate to the `cloud_run/genai-api` directory. A basic FastAPI application str
 ```
 cloud_run/genai-api/
 ├── main.py              # FastAPI app entrypoint
+├── instructions/        # System prompts and instructions
+│   └── styleco_customer_service.txt
 ├── models/              # Pydantic models for request/response schemas
 │   └── __init__.py
 ├── services/            # Business logic and Gemini API calls
@@ -308,14 +310,14 @@ To further refine the StyleCo assistant, find the optimal temperature setting fo
 
 ### Token Analysis Utility
 
-To help StyleCo manage costs and stay within context limits, create a token analysis utility.
+To help StyleCo manage costs and stay within context limits, create a token analysis feature.
 
-**Objective**: Create a utility module `utils/token_analysis.py` with cost estimation capabilities.
+**Objective**: Add a `token_analysis` method to your `GeminiClient` service with cost estimation capabilities.
 
 **Requirements**:
 
 ```python
-def analyze_prompt(prompt: str, model_name: str = "gemini-2.0-flash") -> dict:
+def token_analysis(self, prompt: str) -> dict:
     """
     Analyze a prompt for token usage and cost.
     
