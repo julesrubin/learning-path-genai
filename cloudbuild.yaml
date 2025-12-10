@@ -36,7 +36,7 @@ steps:
           echo "========================================"
           echo "Building and pushing: $${SERVICE}"
           echo "========================================"
-          docker build -t "$${REPO}/$${SERVICE}:latest" -t "$${REPO}/$${SERVICE}:${SHORT_SHA}" "cloud_run/$${SERVICE}"
+          DOCKER_BUILDKIT=1 docker build -t "$${REPO}/$${SERVICE}:latest" -t "$${REPO}/$${SERVICE}:${SHORT_SHA}" "cloud_run/$${SERVICE}"
           docker push "$${REPO}/$${SERVICE}" --all-tags
         done
 
