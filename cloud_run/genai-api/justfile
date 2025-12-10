@@ -1,0 +1,39 @@
+#!/usr/bin/env -S just --justfile
+
+# Internal helper to check UV is available
+_check-uv:
+    #!/usr/bin/env bash
+    if ! command -v uv &> /dev/null; then
+        echo "ERROR: UV is required but not installed."
+        echo "Please install UV from: https://docs.astral.sh/uv/"
+        exit 1
+    fi
+
+# Install dependencies using UV
+[group('setup')]
+install: _check-uv
+    echo "Installing dependencies with UV..."
+    cd {{ source_directory() }} && uv sync
+
+# Launch agent as API server
+[group('run')]
+api: _check-uv
+    cd {{ source_directory() }} && uv run uvicorn main:app --reload --host 127.0.0.1 --port 8080
+
+# Format code with ruff
+[group('quality')]
+format: _check-uv
+    cd {{ source_directory() }} && uv run ruff format .
+
+[group('quality')]
+sort-imports: _check-uv
+    cd {{ source_directory() }} && uv run ruff check --select I --fix .
+
+# Lint code with ruff
+[group('quality')]
+lint: _check-uv
+    cd {{ source_directory() }} && uv run ruff check .
+
+# Run all quality checks (format + lint) - required before commit
+[group('quality')]
+pre-commit: format sort-imports lint
