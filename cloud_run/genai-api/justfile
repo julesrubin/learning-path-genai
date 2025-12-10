@@ -37,3 +37,13 @@ lint: _check-uv
 # Run all quality checks (format + lint) - required before commit
 [group('quality')]
 pre-commit: format sort-imports lint
+
+# Build Docker image
+[group('docker')]
+build:
+    cd {{ source_directory() }} && docker build --no-cache -t genai-api .
+
+# Run Docker container with environment variables from .env
+[group('docker')]
+run:
+    cd {{ source_directory() }} && docker run --env-file .env -p 8080:8080 genai-api

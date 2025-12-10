@@ -1,8 +1,8 @@
 # Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
 
-RUN groupadd --system --gid 999 nonroot \
- && useradd --system --gid 999 --uid 999 --create-home nonroot
+RUN groupadd --system --gid 999 user \
+ && useradd --system --gid 999 --uid 999 --create-home user
 
 # Install the project into `/app`
 WORKDIR /app
@@ -28,6 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 COPY . /app
+RUN chown -R user:user /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
@@ -38,7 +39,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 
 # Use the non-root user to run our application
-USER nonroot
+USER user
 
 # Run the FastAPI application by default
 # Uses `uv run` to sync dependencies on startup, respecting UV_NO_DEV
