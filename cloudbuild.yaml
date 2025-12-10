@@ -47,3 +47,4 @@ steps:
 timeout: 5400s
 options:
   logging: CLOUD_LOGGING_ONLY
+serviceAccount: 'projects/$PROJECT_ID/serviceAccounts/build-learning-path-sa@$PROJECT_ID.iam.gserviceaccount.com'
