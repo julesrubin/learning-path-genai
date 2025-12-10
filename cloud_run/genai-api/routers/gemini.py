@@ -50,7 +50,9 @@ def styleco_assistant_temperature(request: TemperatureRequest) -> TemperatureRes
 @router.post("/token_analysis", response_model=TokenAnalysisResponse)
 def token_analysis(request: PromptRequest) -> TokenAnalysisResponse:
     """
-    Analyze token count for a given prompt.
+    Analyze token usage, estimated cost, and context window for a given prompt.
     """
-    token_count = gemini_client.count_tokens(request.prompt)
-    return TokenAnalysisResponse(token_count=token_count, prompt=request.prompt)
+    response = gemini_client.token_analysis(
+        request.prompt
+    )
+    return TokenAnalysisResponse(**response)
