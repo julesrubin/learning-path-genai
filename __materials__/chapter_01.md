@@ -338,10 +338,29 @@ def token_analysis(self, prompt: str) -> dict:
 
 ---
 
-### Final Task:
+### Final Task: Deploy to Cloud Run
 
-As when it comes to cloud, nothing exists if it is not deployed to the cloud, deploy your FastAPI application to Cloud Run following best practices. See the terraform part in the iac/ folder.
-You should see the Cloud Build triggering when pushing to your branch.
+As when it comes to cloud, nothing exists if it is not deployed to the cloud, deploy your FastAPI application to Cloud Run following best practices.
+
+**Steps**:
+1. In `cloudbuild.yaml`, update the `_SERVICES_TO_BUILD` substitution to include `genai-api`:
+   ```yaml
+   substitutions:
+     _SERVICES_TO_BUILD: 'genai-api'
+   ```
+
+2. Push your changes to trigger Cloud Build
+
+3. The build will:
+   - Build and push your Docker image to Artifact Registry
+   - Deploy the Cloud Run service via Terraform
+
+> [!TIP]
+> The Cloud Run service is not publicly accessible for security. To test it locally, use the proxy command:
+> ```bash
+> gcloud run services proxy genai-api --region=europe-west1
+> ```
+> This creates a local proxy at `http://localhost:8080` that forwards requests to your Cloud Run service with proper authentication.
 
 ---
 
