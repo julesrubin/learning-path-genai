@@ -57,8 +57,10 @@ See [GitHub Issues](https://github.com/julesrubin/learning-path-genai/issues) fo
 - [ ] GCP Sandbox project with billing enabled
 - [ ] VS Code or preferred IDE
 - [ ] Python 3.11+
+- [ ] uv (Python package manager)
 - [ ] Git configured with GitHub account
 - [ ] gcloud CLI installed and authenticated
+- [ ] Bruno VS Code extension (for API testing)
 
 ## Getting Started
 
@@ -74,8 +76,10 @@ Request a GCP sandbox project from your manager.
 ### 4. Install Tools
 - VS Code (or preferred IDE)
 - Python 3.11+
+- **uv** (Python package manager): https://docs.astral.sh/uv/getting-started/installation/
 - Git
 - gcloud CLI: https://cloud.google.com/sdk/docs/install-sdk
+- **Bruno** VS Code extension for API testing: https://marketplace.visualstudio.com/items?itemName=bruno-api-client.bruno
 
 ### 5. Authenticate
 ```bash
@@ -144,3 +148,53 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 3. Create a trigger for your branch to run on pushes
 4. Select the service account created earlier
 5. Let everything else as default and save your trigger
+
+### 10. Python Development with uv
+
+This project uses **uv** as the Python package manager (modern, fast alternative to pip).
+
+**Why uv?**
+- 10-100x faster than pip
+- Built-in virtual environment management
+- Lockfile for reproducible builds
+- Better dependency resolution
+
+**Basic uv commands:**
+
+```bash
+# Initialize a new project (already done in this repo)
+uv init
+
+# Add a dependency
+uv add <package-name>
+
+# Add a dev dependency
+uv add --dev <package-name>
+
+# Sync dependencies (install from lockfile)
+uv sync
+
+# Run a command in the virtual environment
+uv run python main.py
+
+# Activate the virtual environment
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate     # Windows
+```
+
+### 11. Testing APIs with Bruno
+
+Use the **Bruno** VS Code extension to test your APIs instead of curl or Postman.
+
+**Setup:**
+1. Install the Bruno extension in VS Code
+2. API collections are stored in the repository (if available)
+3. Open Bruno collections from the VS Code sidebar
+
+**Benefits:**
+- Collections stored as files in your repo (version controlled)
+- No cloud sync required (unlike Postman)
+- Fast and lightweight
+- Works offline
+
+**Alternative:** If you prefer command-line testing, use `curl` commands provided in the chapter materials.
