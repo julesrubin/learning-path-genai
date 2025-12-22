@@ -144,4 +144,3 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 3. Create a trigger for your branch to run on pushes
 4. Select the service account created earlier
 5. Let everything else as default and save your trigger
-

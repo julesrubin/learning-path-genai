@@ -1,7 +1,8 @@
 #!/bin/bash
 # Initialize resources before using Terraform
-# Usage: ./init.sh [PROJECT_ID]
+# Usage: ./init.sh [PROJECT_ID] [BRANCH_NAME]
 # If PROJECT_ID is not provided, uses current gcloud config
+# If BRANCH_NAME is not provided, uses 'main'
 
 set -e
 
@@ -11,7 +12,16 @@ else
   PROJECT_ID=$1
 fi
 
-TERRAFORM_BUCKET="${PROJECT_ID}-learning-path-tfstate"
+if [ -z "$2" ]; then
+  BRANCH_NAME="main"
+else
+  BRANCH_NAME=$2
+fi
+
+# Sanitize branch name: replace _ with - for GCP compatibility
+SANITIZED_BRANCH=$(echo "${BRANCH_NAME}" | tr '_' '-')
+
+TERRAFORM_BUCKET="${PROJECT_ID}-learning-path-tfstate-${SANITIZED_BRANCH}"
 
 echo "******"
 echo "Project ID: $PROJECT_ID"
