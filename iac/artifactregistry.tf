@@ -1,5 +1,5 @@
 resource "google_artifact_registry_repository" "learning_path_genai" {
-  repository_id = "${var.project_id}-gcr-learning-path-genai"
+  repository_id = "${var.project_id}-gcr-learning-path-genai-${local.branch_name_sanitized}"
   format        = "DOCKER"
   location      = var.region
   description   = "Docker repository for Cloud Run service images for the Learning Path GenAI."

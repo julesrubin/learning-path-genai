@@ -16,7 +16,47 @@ steps:
         echo "***********************"
         cd iac/init
         chmod +x init.sh
-        ./init.sh ${PROJECT_ID}
+        ./init.sh ${PROJECT_ID} ${BRANCH_NAME}
+
+  # Terraform init
+  - id: 'terraform-init'
+    name: 'hashicorp/terraform:1.14.1'
+    entrypoint: 'sh'
+    env:
+      - 'TF_VAR_branch_name=${BRANCH_NAME}'
+    args:
+      - '-c'
+      - |
+        cd iac
+        terraform init -input=false -no-color -upgrade -backend-config=init/backend.tfvars
+
+  # Terraform plan
+  - id: 'terraform-plan'
+    name: 'hashicorp/terraform:1.14.1'
+    entrypoint: 'sh'
+    env:
+      - 'TF_VAR_branch_name=${BRANCH_NAME}'
+    args:
+      - '-c'
+      - |
+        cd iac
+        terraform plan -out=changes.tfplan -var project_id=$PROJECT_ID
+
+  # Terraform apply (Stage 1) - Create infrastructure (Artifact Registry + Service Account)
+  - id: 'terraform-apply-infrastructure'
+    name: 'hashicorp/terraform:1.14.1'
+    entrypoint: 'sh'
+    env:
+      - 'TF_VAR_branch_name=${BRANCH_NAME}'
+    args:
+      - '-c'
+      - |
+        cd iac
+        echo "Applying infrastructure resources (Artifact Registry, Service Account)..."
+        terraform apply -input=false -no-color -auto-approve \
+          -var project_id=$PROJECT_ID \
+          -target=google_artifact_registry_repository.learning_path_genai \
+          -target=google_service_account.cloud_run
 
   # Build and push Docker images for Cloud Run services
   - id: 'docker-build-push'
@@ -30,7 +70,9 @@ steps:
           exit 0
         fi
 
-        REPO="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${PROJECT_ID}-gcr-learning-path-genai"
+        # Sanitize branch name: replace _ with - for GCP compatibility
+        SANITIZED_BRANCH=$$(echo "${BRANCH_NAME}" | tr '_' '-')
+        REPO="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${PROJECT_ID}-gcr-learning-path-genai-$${SANITIZED_BRANCH}"
 
         for SERVICE in ${_SERVICES_TO_BUILD}; do
           echo "========================================"
@@ -40,35 +82,18 @@ steps:
           docker push "$${REPO}/$${SERVICE}" --all-tags
         done
 
-  # Terraform init
-  - id: 'terraform-init'
+  # Terraform apply (Stage 2) - Create Cloud Run services (now that images exist)
+  - id: 'terraform-apply-services'
     name: 'hashicorp/terraform:1.14.1'
     entrypoint: 'sh'
+    env:
+      - 'TF_VAR_branch_name=${BRANCH_NAME}'
     args:
       - '-c'
       - |
         cd iac
-        terraform init -input=false -no-color -upgrade -backend-config=init/backend.tfvars
-
-  # Terraform plan
-  - id: 'terraform-plan'
-    name: 'hashicorp/terraform:1.14.1'
-    entrypoint: 'sh'
-    args:
-      - '-c'
-      - |
-        cd iac
-        terraform plan -out=changes.tfplan -var project_id=$PROJECT_ID
-
-  # Terraform apply
-  - id: 'terraform-apply'
-    name: 'hashicorp/terraform:1.14.1'
-    entrypoint: 'sh'
-    args:
-      - '-c'
-      - |
-        cd iac
-        terraform apply -input=false -no-color -auto-approve changes.tfplan
+        echo "Applying Cloud Run services..."
+        terraform apply -input=false -no-color -auto-approve -var project_id=$PROJECT_ID
 
 timeout: 5400s
 options:
