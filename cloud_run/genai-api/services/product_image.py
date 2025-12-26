@@ -66,8 +66,7 @@ class ProductImageClient:
             ProductImageResponse with base64-encoded images and metadata.
 
         Raises:
-            ValueError: If the response contains no images.
-            ClientError: If the prompt is blocked by safety filters.
+            ValueError: If the response contains no images or content is blocked by safety filters.
         """
         prompt = self._build_prompt(request)
 
@@ -88,6 +87,18 @@ class ProductImageClient:
 
         images: List[ImageData] = []
         for i, generated_image in enumerate(response.generated_images):
+            # Check for RAI filtering
+            if generated_image.rai_filtered_reason:
+                raise ValueError(
+                    f"Content blocked by safety filters: {generated_image.rai_filtered_reason}"
+                )
+
+            # Check if image data exists
+            if not generated_image.image or not generated_image.image.image_bytes:
+                raise ValueError(
+                    "No image data returned. This may be due to content safety filters."
+                )
+
             image_bytes = generated_image.image.image_bytes
             base64_data = base64.b64encode(image_bytes).decode("utf-8")
             images.append(
