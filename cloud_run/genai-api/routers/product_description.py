@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 
-from models.product_description import ProductDescriptionRequest, ProductDescriptionResponse
+from models.product_description import (
+    ProductDescriptionRequest,
+    ProductDescriptionResponse,
+)
 from services.product_description import ProductDescriptionClient
 
 router = APIRouter()
@@ -14,5 +17,7 @@ def generate_product_description(
     """
     Generate a product description based on the provided product information.
     """
-    description = product_description_client.generate_product_description(product_description_request)
+    description = product_description_client.generate_product_description(
+        product_description_request
+    )
     return description

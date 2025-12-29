@@ -1,4 +1,3 @@
-import base64
 from enum import Enum
 from typing import List, Optional
 
@@ -43,6 +42,10 @@ class ImageData(BaseModel):
 
 
 class ProductImageResponse(BaseModel):
-    images: List[ImageData] = Field(..., examples=[[{"base64_data": "/9j/4AAQSkZJRg...", "mime_type": "image/png"}]])
-    prompt_used: str = Field(..., examples=["Editorial fashion photography of Elegance Silk Blouse..."])
+    images: List[ImageData] = Field(
+        ..., examples=[[{"base64_data": "/9j/4AAQSkZJRg...", "mime_type": "image/png"}]]
+    )
+    prompt_used: str = Field(
+        ..., examples=["Editorial fashion photography of Elegance Silk Blouse..."]
+    )
     image_count: int = Field(..., examples=[2])
