@@ -1,7 +1,8 @@
-import os
 from pathlib import Path
 
 from google import genai
+
+from config import settings
 
 
 class GeminiClient:
@@ -14,7 +15,7 @@ class GeminiClient:
         """Initialize the Gemini client with Vertex AI configuration."""
         self.client = self._initialize_client()
         self.prompts_dir = Path(__file__).parent.parent / "instructions"
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = settings.gemini_model_name
 
     def _initialize_client(self) -> genai.Client:
         """
@@ -25,8 +26,8 @@ class GeminiClient:
         """
         return genai.Client(
             vertexai=True,
-            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-            location=os.getenv("GOOGLE_CLOUD_LOCATION", "europe-west1"),
+            project=settings.google_cloud_project,
+            location=settings.google_cloud_location,
         )
 
     def generate_simple_response(self, prompt: str) -> str:
@@ -112,10 +113,8 @@ class GeminiClient:
         token_count = self.client.models.count_tokens(
             model=self.model_name, contents=prompt
         ).total_tokens
-        
-        estimated_cost = (token_count / 1_000_000) * PRICING[self.model_name][
-            "input"
-        ]
+
+        estimated_cost = (token_count / 1_000_000) * PRICING[self.model_name]["input"]
 
         context_usage_percent = (token_count / CONTEXT_WINDOWS[self.model_name]) * 100
         warnings = []

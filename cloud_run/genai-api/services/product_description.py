@@ -1,10 +1,13 @@
-import os
 from pathlib import Path
 
 from google import genai
 from jinja2 import Environment, FileSystemLoader
 
-from models.product_description import ProductDescriptionRequest, ProductDescriptionResponse
+from config import settings
+from models.product_description import (
+    ProductDescriptionRequest,
+    ProductDescriptionResponse,
+)
 
 
 class ProductDescriptionClient:
@@ -17,7 +20,7 @@ class ProductDescriptionClient:
         """Initialize the Product Description client with Vertex AI configuration."""
         self.client = self._initialize_client()
         self.prompts_dir = Path(__file__).parent.parent / "instructions"
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = settings.gemini_model_name
 
         # Initialize Jinja2 environment
         self.jinja_env = Environment(
@@ -34,8 +37,8 @@ class ProductDescriptionClient:
         """
         return genai.Client(
             vertexai=True,
-            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-            location=os.getenv("GOOGLE_CLOUD_LOCATION", "europe-west1"),
+            project=settings.google_cloud_project,
+            location=settings.google_cloud_location,
         )
 
     def generate_product_description(

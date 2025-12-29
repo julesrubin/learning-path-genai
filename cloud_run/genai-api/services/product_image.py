@@ -1,10 +1,10 @@
 import base64
-import os
 from typing import List
 
 from google import genai
 from google.genai.types import GenerateImagesConfig
 
+from config import settings
 from models.product_image import (
     ImageData,
     ProductImageRequest,
@@ -21,7 +21,7 @@ class ProductImageClient:
     def __init__(self):
         """Initialize the Product Image client with Vertex AI configuration."""
         self.client = self._initialize_client()
-        self.model_name = "imagen-4.0-generate-001"
+        self.model_name = settings.imagen_model_name
 
     def _initialize_client(self) -> genai.Client:
         """
@@ -32,8 +32,8 @@ class ProductImageClient:
         """
         return genai.Client(
             vertexai=True,
-            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-            location=os.getenv("GOOGLE_CLOUD_LOCATION", "europe-west1"),
+            project=settings.google_cloud_project,
+            location=settings.google_cloud_location,
         )
 
     def _build_prompt(self, request: ProductImageRequest) -> str:
@@ -107,9 +107,10 @@ class ProductImageClient:
                     mime_type="image/png",
                 )
             )
-            # save the image locally for debugging purposes
-            with open(f"debug_image_{i}.png", "wb") as img_file:
-                img_file.write(image_bytes)
+            # save the image locally for debugging purposes (if enabled)
+            if settings.save_debug_images:
+                with open(f"debug_image_{i}.png", "wb") as img_file:
+                    img_file.write(image_bytes)
 
         return ProductImageResponse(
             images=images,
