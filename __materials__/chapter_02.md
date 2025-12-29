@@ -205,7 +205,7 @@ curl -X POST http://localhost:8080/generate_product_image \
 ```
 
 > [!WARNING]
-> Imagen has strict content safety filters. Some prompts may be blocked. Always implement proper error handling for `ImageBlockedError` exceptions and provide meaningful feedback to users.
+> Imagen has strict content safety filters. Some prompts may be blocked. You **must** implement proper error handling for RAI (Responsible AI) filtering to provide meaningful feedback to users.
 
 #### Implementation Details
 
@@ -217,20 +217,47 @@ curl -X POST http://localhost:8080/generate_product_image \
 
 **2. Imagen Client** (`services/product_image.py`):
 
+Using the Pydantic Settings pattern from Chapter 1, add Imagen-specific configuration:
+
+**First, update `config/settings.py`**:
 ```python
-import os
+class Settings(BaseSettings):
+    # ... existing Google Cloud and Gemini settings ...
+    
+    # Imagen Configuration
+    imagen_model_name: str = "imagen-4.0-generate-001"
+    save_debug_images: bool = False  # Enable for local development
+```
+
+**Then, use it in your service**:
+```python
 from google import genai
 from google.genai.types import GenerateImagesConfig
+from config import settings
 
 class ProductImageClient:
     def __init__(self):
-        self.client = genai.Client(
+        self.client = self._initialize_client()
+        self.model_name = settings.imagen_model_name
+
+    def _initialize_client(self) -> genai.Client:
+        return genai.Client(
             vertexai=True,
-            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-            location=os.getenv("GOOGLE_CLOUD_LOCATION", "europe-west1"),
+            project=settings.google_cloud_project,
+            location=settings.google_cloud_location,
         )
-        self.model_name = "imagen-4.0-generate-001"
 ```
+
+**Conditional Debug Image Saving**:
+```python
+# In your image generation loop
+if settings.save_debug_images:
+    with open(f"debug_image_{i}.png", "wb") as img_file:
+        img_file.write(image_bytes)
+```
+
+> [!TIP]
+> The `save_debug_images` flag is useful during development but should be `False` in production to avoid filling up disk space. Control it via environment variable: `SAVE_DEBUG_IMAGES=true`
 
 > [!NOTE]
 > Multiple Imagen 4 models are available: `imagen-4.0-generate-001` (standard), `imagen-4.0-ultra-generate-001` (highest quality), and `imagen-4.0-fast-generate-001` (lowest latency). Choose based on your quality/speed requirements.
@@ -260,21 +287,133 @@ for generated_image in response.generated_images:
     # Convert to base64 for API response
 ```
 
-**4. Error Handling**:
+**4. Error Handling - Imagen RAI Filtering**:
+
+Understanding how Imagen's RAI (Responsible AI) filters work is crucial for building robust applications.
+
+**The Challenge**:
+
+Unlike typical API errors that raise exceptions, Imagen's safety filters return a **successful 200 response** with blocked content. This can cause your code to crash unexpectedly if you don't handle it properly.
+
+**What Happens When Content is Blocked**:
 
 ```python
-from google.genai.errors import ClientError
+# Response structure when RAI filters block content:
+response.generated_images = [
+    GeneratedImage(
+        image=Image(),  # Empty Image object!
+        rai_filtered_reason="Unable to show generated images. All images were filtered out because they violated Google's Responsible AI practices. Try rephrasing the prompt. If you think this was an error, send feedback. Support codes: 63429089, 64151117",
+        safety_attributes=SafetyAttributes()
+    )
+]
 
-try:
-    response = self.client.models.generate_images(...)
-except ClientError as e:
-    if "blocked" in str(e).lower():
-        raise HTTPException(
-            status_code=400,
-            detail="Image generation blocked by safety filters. Please modify your prompt."
-        )
-    raise
+# Key observations:
+# - generated_images list is NOT empty ✓
+# - But image.image_bytes is None ✗
+# - rai_filtered_reason contains the error message ✓
 ```
+
+**Without proper handling, you'll get**:
+```python
+image_bytes = generated_image.image.image_bytes  # None
+base64.b64encode(image_bytes)  # TypeError: a bytes-like object is required, not 'NoneType'
+```
+
+**Proper Implementation** (in `services/product_image.py`):
+
+```python
+def generate_product_image(self, request: ProductImageRequest) -> ProductImageResponse:
+    """Generate product images with proper RAI error handling."""
+    
+    response = self.client.models.generate_images(
+        model=self.model_name,
+        prompt=prompt,
+        config=config,
+    )
+
+    # CHECK 1: Response has images array
+    if not response.generated_images:
+        raise ValueError("No images generated from Imagen API")
+
+    images = []
+    for i, generated_image in enumerate(response.generated_images):
+        # CHECK 2: RAI filtering - check this FIRST
+        if generated_image.rai_filtered_reason:
+            raise ValueError(
+                f"Content blocked by safety filters: {generated_image.rai_filtered_reason}"
+            )
+        
+        # CHECK 3: Image data exists (double safety check)
+        if not generated_image.image or not generated_image.image.image_bytes:
+            raise ValueError(
+                "No image data returned. This may be due to content safety filters."
+            )
+        
+        # Now it's safe to process the image
+        image_bytes = generated_image.image.image_bytes
+        base64_data = base64.b64encode(image_bytes).decode("utf-8")
+        images.append(ImageData(base64_data=base64_data, mime_type="image/png"))
+        
+        # Conditional debug saving
+        if settings.save_debug_images:
+            with open(f"debug_image_{i}.png", "wb") as img_file:
+                img_file.write(image_bytes)
+
+    return ProductImageResponse(
+        images=images,
+        prompt_used=prompt,
+        image_count=len(images),
+    )
+```
+
+**Router Layer** (in `routers/product_image.py`):
+
+The router should handle the ValueError from the service and convert it to an appropriate HTTP response:
+
+```python
+from fastapi import APIRouter, HTTPException
+
+@router.post("/generate_product_image", response_model=ProductImageResponse)
+def generate_product_image(request: ProductImageRequest) -> ProductImageResponse:
+    try:
+        return product_image_client.generate_product_image(request)
+    except ValueError as e:
+        # Safety filter errors and validation errors
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Unexpected errors
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+```
+
+> [!IMPORTANT]
+> **Why this architecture matters**:
+> - **Service layer** contains business logic and error detection
+> - **Router layer** handles HTTP concerns (status codes, responses)
+> - **ValueError** signals user-correctable errors (400 Bad Request)
+> - **Exception** catches unexpected errors (500 Internal Server Error)
+
+**Testing Your Error Handling**:
+
+To verify your implementation works correctly, test with prompts that trigger safety filters:
+
+```python
+# Test cases that should return 400 with clear error messages:
+test_prompts = [
+    "political figure in controversial context",
+    "violent or weapon-related imagery",
+    "explicit or adult content",
+    "copyrighted characters or brands"
+]
+```
+
+Expected behavior:
+- ✅ Returns HTTP 400 (Bad Request)
+- ✅ Clear error message with RAI filter reason
+- ✅ No TypeErrors or crashes
+- ✅ Logs contain useful debugging information
+
+> [!TIP]
+> Create a simple test notebook (like the `test.ipynb` example in your repo) to quickly test various prompts and see RAI filter responses without going through the full API.
 
 > [!TIP]
 > Test your image generation endpoint with various prompts to understand Imagen's capabilities and limitations. Start with simple, descriptive prompts and gradually add complexity.
@@ -314,11 +453,16 @@ As you correctly deployed to Cloud Run in Chapter 1, you should just need to com
 ---
 
 ## Reflection Questions
+
+Before moving to Chapter 3, consider these questions:
+
 1. How did using Jinja2 templates improve your prompt engineering process?
 2. What challenges did you face when implementing structured output with JSON schemas?
-4. What potential use cases can you envision for multimodal models in your applications?
-5. How would you optimize costs when using high-volume models like Gemini and Imagen in production?
-6. What strategies would you use to handle content safety filters effectively in a user-facing application?
+3. **How does Pydantic Settings improve code maintainability compared to direct `os.getenv()` calls?**
+4. **Why is it important to check `rai_filtered_reason` before accessing `image_bytes` in Imagen responses?**
+5. What potential use cases can you envision for multimodal models in your applications?
+6. How would you optimize costs when using high-volume models like Gemini and Imagen in production?
+7. What strategies would you use to handle content safety filters effectively in a user-facing application?
 
 ---
 
