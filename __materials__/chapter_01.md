@@ -230,6 +230,48 @@ cloud_run/genai-api/
 
 ---
 
+### Configuration Management
+
+Professional applications require proper configuration management. You'll use **Pydantic Settings** from the start for type-safe, validated configuration.
+
+**Why Pydantic Settings?**
+- **Type Safety**: Configuration values are validated at startup
+- **Centralized**: Single source of truth for all settings
+- **Environment Support**: Automatically loads from `.env` files
+- **Documentation**: Settings class serves as configuration documentation
+- **Testing**: Easy to mock or override for tests
+
+> [!IMPORTANT]
+> **Never use `os.getenv()` directly in services.** Always access configuration through the `settings` object. This provides:
+> - Automatic validation (app won't start with invalid config)
+> - Type checking (IDE autocomplete and type errors)
+> - Clear documentation of all required environment variables
+> - Easy testing with mock settings
+
+**What Happens on Startup**:
+
+When you run the application, Pydantic Settings will:
+1. Look for a `.env` file
+2. Check environment variables
+3. Apply default values where specified
+4. **Validate all required fields** - if `google_cloud_project` is missing, you'll get a clear error:
+   ```
+   ValidationError: 1 validation error for Settings
+   google_cloud_project
+     Field required [type=missing, input_value={}, input_type=dict]
+   ```
+
+This fails fast and clearly, much better than getting a cryptic error deep in your code!
+
+> [!TIP]
+> As your application grows, add more settings to this file:
+> - Feature flags (`enable_debug_mode: bool = False`)
+> - API keys for external services
+> - Timeout configurations
+> - Model-specific parameters
+
+---
+
 ## Your Mission
 
 ### Hello, Gemini
