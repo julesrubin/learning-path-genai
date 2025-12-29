@@ -41,7 +41,11 @@ def generate_product_image(
     except ValueError as e:
         error_message = str(e).lower()
         # Safety filter errors should return 400, not 500
-        if "blocked" in error_message or "safety" in error_message or "filtered" in error_message:
+        if (
+            "blocked" in error_message
+            or "safety" in error_message
+            or "filtered" in error_message
+        ):
             raise HTTPException(
                 status_code=400,
                 detail=str(e),

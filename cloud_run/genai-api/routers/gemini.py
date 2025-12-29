@@ -52,7 +52,5 @@ def token_analysis(request: PromptRequest) -> TokenAnalysisResponse:
     """
     Analyze token usage, estimated cost, and context window for a given prompt.
     """
-    response = gemini_client.token_analysis(
-        request.prompt
-    )
+    response = gemini_client.token_analysis(request.prompt)
     return TokenAnalysisResponse(**response)
