@@ -82,4 +82,4 @@ Already wired in Chapter 1 — commit + push triggers the build.
 
 ---
 
-Next: [Chapter 3: RAG with Vertex AI Search](chapter_03.md) — grounding answers in StyleCo's own data.
+Next: [Chapter 3: Retrieval-Augmented Generation](chapter_03.md) — grounding answers in StyleCo's own data.
