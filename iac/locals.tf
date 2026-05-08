@@ -5,5 +5,5 @@ locals {
 
   # Single source of truth for the RAG corpus display name. Consumed by both
   # the Cloud Run service (env var) and the bootstrap script (via terraform output).
-  rag_corpus_display_name = "styleco-knowledge-base-${local.branch_name_sanitized}"
+  rag_corpus_display_name = "learning-path-knowledge-base-${local.branch_name_sanitized}"
 }
