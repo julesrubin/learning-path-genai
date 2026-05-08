@@ -75,6 +75,7 @@ Write a short comparison (`claudedocs/rag-comparison.md`) on lines of code, cost
 1. Best chunk size for policy docs vs. product catalog — why?
 2. When Vertex AI Search instead of RAG Engine?
 3. Strategy when retrieval returns nothing relevant — refuse, fall back, clarify?
+4. Play with top-k retrieval parameter — run a small experiment varying k (e.g., 1, 3, 5, 10). How does it impact accuracy, hallucination rate, citation precision, latency, cost?
 
 ---
 
