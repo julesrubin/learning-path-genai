@@ -1,0 +1,14 @@
+{
+  "sku": "ESB-2024-001",
+  "name": "Elegance Silk Blouse",
+  "category": "Women / Tops / Workwear",
+  "price_eur": 129.00,
+  "materials": ["100% Mulberry Silk"],
+  "colors": ["Ivory", "Navy", "Blush Pink"],
+  "sizes_available": ["XS", "S", "M", "L", "XL"],
+  "fit": "Regular",
+  "care": "Dry clean only. Iron on silk setting. Store on a padded hanger.",
+  "description": "A timeless silk blouse cut from 100% Mulberry Silk with a fluid drape and mother-of-pearl buttons. Pairs equally well with tailored trousers for the office and a slip skirt for evenings.",
+  "country_of_origin": "Italy",
+  "in_stock": true
+}

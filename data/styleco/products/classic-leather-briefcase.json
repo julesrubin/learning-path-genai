@@ -1,0 +1,15 @@
+{
+  "sku": "CLB-2024-007",
+  "name": "Classic Leather Briefcase",
+  "category": "Men / Accessories / Bags",
+  "price_eur": 459.00,
+  "materials": ["Full-grain Italian leather", "Brass hardware", "Cotton twill lining"],
+  "colors": ["Cognac", "Black"],
+  "sizes_available": ["One Size"],
+  "dimensions_cm": {"width": 40, "height": 30, "depth": 10},
+  "fits_laptop": "Up to 15 inches",
+  "care": "Wipe with a dry cloth. Treat with neutral leather balm every 6 months.",
+  "description": "A structured briefcase in full-grain Italian leather with brass hardware, padded laptop compartment, and an organizer panel for cards, pens, and a passport.",
+  "country_of_origin": "Italy",
+  "in_stock": true
+}

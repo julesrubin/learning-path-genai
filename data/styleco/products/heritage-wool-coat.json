@@ -1,0 +1,14 @@
+{
+  "sku": "HWC-2024-014",
+  "name": "Heritage Wool Coat",
+  "category": "Women / Outerwear / Coats",
+  "price_eur": 349.00,
+  "materials": ["80% Virgin Wool", "20% Cashmere"],
+  "colors": ["Camel", "Charcoal", "Black"],
+  "sizes_available": ["S", "M", "L", "XL"],
+  "fit": "Relaxed",
+  "care": "Dry clean only. Brush with a soft garment brush after each wear.",
+  "description": "A double-breasted overcoat in a camel-and-cashmere blend, tailored with a relaxed shoulder and a single back vent. Mid-thigh length, fully lined in viscose twill.",
+  "country_of_origin": "Portugal",
+  "in_stock": true
+}
