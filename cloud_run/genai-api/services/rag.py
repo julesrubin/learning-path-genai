@@ -5,17 +5,7 @@ from vertexai import rag
 
 from config import settings
 from models.rag import Citation, RagQueryResponse
-
-
-class RagCorpusNotFoundError(RuntimeError):
-    """Raised when no corpus matching `rag_corpus_display_name` exists."""
-
-
-_SYSTEM_INSTRUCTION = (
-    "You are StyleCo's customer service assistant. Answer using only the "
-    "provided context from StyleCo documents. If the answer is not in the "
-    "context, say so clearly instead of guessing."
-)
+from prompts import load_prompt
 
 
 class RagClient:
@@ -44,17 +34,15 @@ class RagClient:
     @property
     def corpus_resource_name(self) -> str:
         if self._corpus_resource_name is None:
-            self._corpus_resource_name = self._resolve_corpus()
+            for corpus in rag.list_corpora():
+                if corpus.display_name == settings.rag_corpus_display_name:
+                    self._corpus_resource_name = corpus.name
+                    return self._corpus_resource_name
+            raise LookupError(
+                f"No RAG corpus with display_name='{settings.rag_corpus_display_name}'. "
+                "Run the bootstrap script in iac/scripts/bootstrap_rag_corpus.py to create it."
+            )
         return self._corpus_resource_name
-
-    def _resolve_corpus(self) -> str:
-        for corpus in rag.list_corpora():
-            if corpus.display_name == settings.rag_corpus_display_name:
-                return corpus.name
-        raise RagCorpusNotFoundError(
-            f"No RAG corpus with display_name='{settings.rag_corpus_display_name}'. "
-            "Run `just bootstrap-rag` from the iac/ directory to create it."
-        )
 
     def query(self, question: str) -> RagQueryResponse:
         retrieval_tool = types.Tool(
@@ -74,7 +62,7 @@ class RagClient:
             model=settings.gemini_model_name,
             contents=question,
             config=types.GenerateContentConfig(
-                system_instruction=_SYSTEM_INSTRUCTION,
+                system_instruction=load_prompt("styleco_rag_system"),
                 tools=[retrieval_tool],
             ),
         )
