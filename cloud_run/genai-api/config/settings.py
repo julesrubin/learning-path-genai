@@ -17,6 +17,9 @@ class Settings(BaseSettings):
         gemini_model_name: Gemini model to use (default: gemini-2.5-flash)
         imagen_model_name: Imagen model to use (default: imagen-4.0-generate-001)
         save_debug_images: Whether to save generated images locally for debugging
+        rag_corpus_display_name: Display name used to look up the RAG Engine corpus.
+        rag_embedding_model: Vertex AI embedding model used by the RAG corpus.
+        rag_top_k: Number of chunks to retrieve per query.
     """
 
     model_config = SettingsConfigDict(
@@ -35,6 +38,11 @@ class Settings(BaseSettings):
 
     # Feature Flags
     save_debug_images: bool = False
+
+    # RAG Engine Configuration
+    rag_corpus_display_name: str = "styleco-knowledge-base"
+    rag_embedding_model: str = "publishers/google/models/text-embedding-005"
+    rag_top_k: int = 5
 
 
 # Singleton instance

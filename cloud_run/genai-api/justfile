@@ -47,3 +47,4 @@ build:
 [group('docker')]
 run:
     cd {{ source_directory() }} && docker run --env-file .env -p 8080:8080 genai-api
+
