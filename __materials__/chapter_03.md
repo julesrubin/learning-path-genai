@@ -50,7 +50,7 @@ A small idempotent script, runnable on first deploy and re-runnable safely:
 
 ### 3. Grounded Q&A Endpoint
 
-Create `POST /styleco_rag` returning `answer` + `citations[]` (each with `source` + `snippet`).
+Create `POST /rag` returning `answer` + `citations[]` (each with `source` + `snippet`).
 
 - Retrieve via `rag.retrieval_query(...)`
 - Ground Gemini with `Tool.from_retrieval(...)`

@@ -7,8 +7,8 @@ router = APIRouter()
 rag_client = RagClient()
 
 
-@router.post("/styleco_rag", response_model=RagQueryResponse)
-def styleco_rag(request: RagQueryRequest) -> RagQueryResponse:
+@router.post("/rag", response_model=RagQueryResponse)
+def rag(request: RagQueryRequest) -> RagQueryResponse:
     """Grounded Q&A over StyleCo's knowledge base via Vertex AI RAG Engine."""
     try:
         return rag_client.query(request.question)
