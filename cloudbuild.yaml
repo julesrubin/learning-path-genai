@@ -24,6 +24,7 @@ steps:
     entrypoint: 'sh'
     env:
       - 'TF_VAR_branch_name=${BRANCH_NAME}'
+      - 'TF_VAR_project_number=${PROJECT_NUMBER}'
     args:
       - '-c'
       - |
@@ -36,6 +37,7 @@ steps:
     entrypoint: 'sh'
     env:
       - 'TF_VAR_branch_name=${BRANCH_NAME}'
+      - 'TF_VAR_project_number=${PROJECT_NUMBER}'
     args:
       - '-c'
       - |
@@ -48,6 +50,7 @@ steps:
     entrypoint: 'sh'
     env:
       - 'TF_VAR_branch_name=${BRANCH_NAME}'
+      - 'TF_VAR_project_number=${PROJECT_NUMBER}'
     args:
       - '-c'
       - |
@@ -88,6 +91,7 @@ steps:
     entrypoint: 'sh'
     env:
       - 'TF_VAR_branch_name=${BRANCH_NAME}'
+      - 'TF_VAR_project_number=${PROJECT_NUMBER}'
     args:
       - '-c'
       - |

@@ -22,6 +22,13 @@ resource "google_storage_bucket_iam_member" "cloud_run_rag_reader" {
   member = "serviceAccount:${google_service_account.cloud_run.email}"
 }
 
+# The Vertex AI Service Agent reads from the bucket during corpus ingestion.
+resource "google_storage_bucket_iam_member" "rag_agent_reader" {
+  bucket = google_storage_bucket.rag_documents.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:service-${var.project_number}@gcp-sa-aiplatform.iam.gserviceaccount.com"
+}
+
 output "rag_documents_bucket" {
   description = "GCS bucket holding StyleCo source documents for RAG ingestion."
   value       = google_storage_bucket.rag_documents.name

@@ -3,6 +3,11 @@ variable "project_id" {
   description = "GCP project identifier"
 }
 
+variable "project_number" {
+  type        = string
+  description = "GCP project number (used to compose Google-managed service agent emails)"
+}
+
 variable "region" {
   type        = string
   description = "GCP region"
