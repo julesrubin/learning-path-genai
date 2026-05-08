@@ -13,23 +13,23 @@ StyleCo creates high-end lifestyle products. Your goal is to transform technical
 
 # FEW-SHOT EXAMPLE
 **Input**: product_name: "Midnight Pumps", materials: "Italian Velvet", description_length: "Short"
-**Output**: 
-{
+**Output**:
+{{
   "description": "Redefine evening elegance with the Midnight Pumps, where the deep texture of Italian velvet meets a precision-cut silhouette. These somptous heels catch the light with every movement, offering unparalleled comfort for your most prestigious galas. Pair them with a black sheath dress for a timeless allure. The ultimate expression of nocturnal luxury.",
   "seo_keywords": ["velvet pumps", "luxury italian shoes", "evening heels", "high-end women's fashion"]
-}.
+}}.
 
 # PRODUCT DATA
-- **Product Name**: {{ product_name }}
-- **Categories**: {{ categories }}
-- **Materials**: {{ materials }}
-- **Colors**: {{ colors }}
-- **Target Audience**: {{ target_audience }}
-- **Desired Length**: {{ description_length }}
+- **Product Name**: {product_name}
+- **Categories**: {categories}
+- **Materials**: {materials}
+- **Colors**: {colors}
+- **Target Audience**: {target_audience}
+- **Desired Length**: {description_length}
 
 # OUTPUT FORMAT (JSON)
 Return only valid JSON to ensure structural integrity and limit hallucinations:
-{
+{{
   "description": "...",
   "seo_keywords": ["...", "...", "...", "..."]
-}
+}}

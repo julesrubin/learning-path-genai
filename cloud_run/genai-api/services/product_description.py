@@ -1,45 +1,26 @@
-from pathlib import Path
-
 from google import genai
-from jinja2 import Environment, FileSystemLoader
 
 from config import settings
 from models.product_description import (
     ProductDescriptionRequest,
     ProductDescriptionResponse,
 )
+from prompts import load_prompt
 
 
 class ProductDescriptionClient:
     """
     Client for generating product descriptions using Google's Gemini API via Vertex AI.
-    Handles initialization and prompt generation with Jinja2 templates.
     """
 
     def __init__(self):
         """Initialize the Product Description client with Vertex AI configuration."""
-        self.client = self._initialize_client()
-        self.prompts_dir = Path(__file__).parent.parent / "instructions"
-        self.model_name = settings.gemini_model_name
-
-        # Initialize Jinja2 environment
-        self.jinja_env = Environment(
-            loader=FileSystemLoader(self.prompts_dir),
-            autoescape=False,  # No HTML escaping needed for prompts
-        )
-
-    def _initialize_client(self) -> genai.Client:
-        """
-        Initialize and return a Gemini client configured for Vertex AI.
-
-        Returns:
-            Configured genai.Client instance
-        """
-        return genai.Client(
+        self.client = genai.Client(
             vertexai=True,
             project=settings.google_cloud_project,
             location=settings.google_cloud_location,
         )
+        self.model_name = settings.gemini_model_name
 
     def generate_product_description(
         self, product_description_request: ProductDescriptionRequest
@@ -56,15 +37,14 @@ class ProductDescriptionClient:
         Raises:
             ValueError: If the response text is empty or None.
         """
-        # Load and render the Jinja2 template
-        template = self.jinja_env.get_template("product_description.j2")
-        prompt = template.render(
+        prompt = load_prompt(
+            "product_description",
             product_name=product_description_request.product_name,
             categories=", ".join(product_description_request.categories),
             materials=", ".join(product_description_request.materials),
             colors=", ".join(product_description_request.colors),
-            description_length=product_description_request.description_length,
-            target_audience=product_description_request.target_audience,
+            description_length=product_description_request.description_length.value,
+            target_audience=product_description_request.target_audience.value,
         )
 
         config = genai.types.GenerateContentConfig(

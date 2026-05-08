@@ -1,5 +1,4 @@
 import base64
-from typing import List
 
 from google import genai
 from google.genai.types import GenerateImagesConfig
@@ -10,48 +9,22 @@ from models.product_image import (
     ProductImageRequest,
     ProductImageResponse,
 )
+from prompts import load_prompt
 
 
 class ProductImageClient:
     """
     Client for generating product images using Google's Imagen API via Vertex AI.
-    Handles initialization and image generation with configurable parameters.
     """
 
     def __init__(self):
         """Initialize the Product Image client with Vertex AI configuration."""
-        self.client = self._initialize_client()
-        self.model_name = settings.imagen_model_name
-
-    def _initialize_client(self) -> genai.Client:
-        """
-        Initialize and return a Gemini client configured for Vertex AI.
-
-        Returns:
-            Configured genai.Client instance
-        """
-        return genai.Client(
+        self.client = genai.Client(
             vertexai=True,
             project=settings.google_cloud_project,
             location=settings.google_cloud_location,
         )
-
-    def _build_prompt(self, request: ProductImageRequest) -> str:
-        """
-        Build a coherent image generation prompt from request parameters.
-
-        Args:
-            request: The product image request containing product details.
-
-        Returns:
-            A formatted prompt string for image generation.
-        """
-        prompt_parts = [
-            f"{request.style.value} fashion photography of {request.product_name}.",
-            f"Setting: {request.setting}.",
-            "High quality, detailed, professional lighting.",
-        ]
-        return " ".join(prompt_parts)
+        self.model_name = settings.imagen_model_name
 
     def generate_product_image(
         self, request: ProductImageRequest
@@ -68,7 +41,12 @@ class ProductImageClient:
         Raises:
             ValueError: If the response contains no images or content is blocked by safety filters.
         """
-        prompt = self._build_prompt(request)
+        prompt = load_prompt(
+            "product_image",
+            style=request.style.value,
+            product_name=request.product_name,
+            setting=request.setting,
+        )
 
         config = GenerateImagesConfig(
             number_of_images=request.image_count,
@@ -85,15 +63,13 @@ class ProductImageClient:
         if not response.generated_images:
             raise ValueError("No images generated from Imagen API")
 
-        images: List[ImageData] = []
+        images: list[ImageData] = []
         for i, generated_image in enumerate(response.generated_images):
-            # Check for RAI filtering
             if generated_image.rai_filtered_reason:
                 raise ValueError(
                     f"Content blocked by safety filters: {generated_image.rai_filtered_reason}"
                 )
 
-            # Check if image data exists
             if not generated_image.image or not generated_image.image.image_bytes:
                 raise ValueError(
                     "No image data returned. This may be due to content safety filters."
@@ -107,7 +83,6 @@ class ProductImageClient:
                     mime_type="image/png",
                 )
             )
-            # save the image locally for debugging purposes (if enabled)
             if settings.save_debug_images:
                 with open(f"debug_image_{i}.png", "wb") as img_file:
                     img_file.write(image_bytes)
