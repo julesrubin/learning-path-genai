@@ -41,6 +41,8 @@ resource "google_cloud_run_v2_service" "default" {
     }
   }
 
-  # Ensure the image exists before creating the service
-  depends_on = [google_artifact_registry_repository.learning_path_genai]
+  depends_on = [
+    google_artifact_registry_repository.learning_path_genai,
+    google_project_iam_member.cloud_build_run_admin,
+  ]
 }
