@@ -2,11 +2,12 @@ locals {
   services = {
     genai_api = {
       service_name = "genai-api-${local.branch_name_sanitized}"
-      image_name   = "genai-api"  # Base image name without branch
+      image_name   = "genai-api" # Base image name without branch
       service_port = 8080
       env_vars = {
-        "GOOGLE_CLOUD_PROJECT"  = var.project_id
-        "GOOGLE_CLOUD_LOCATION" = var.region
+        "GOOGLE_CLOUD_PROJECT"    = var.project_id
+        "GOOGLE_CLOUD_LOCATION"   = var.region
+        "RAG_CORPUS_DISPLAY_NAME" = local.rag_corpus_display_name
       }
     }
   }
