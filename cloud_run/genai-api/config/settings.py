@@ -20,6 +20,9 @@ class Settings(BaseSettings):
         rag_corpus_display_name: Display name used to look up the RAG Engine corpus.
         rag_embedding_model: Vertex AI embedding model used by the RAG corpus.
         rag_top_k: Number of chunks to retrieve per query.
+        gemini_input_price_per_million: USD price per 1M input tokens for the active Gemini model.
+        gemini_output_price_per_million: USD price per 1M output tokens for the active Gemini model.
+        gemini_context_window: Maximum context window size in tokens for the active Gemini model.
     """
 
     model_config = SettingsConfigDict(
@@ -43,6 +46,11 @@ class Settings(BaseSettings):
     rag_corpus_display_name: str = "styleco-knowledge-base"
     rag_embedding_model: str = "publishers/google/models/text-embedding-005"
     rag_top_k: int = 5
+
+    # Gemini pricing & context window — see https://cloud.google.com/vertex-ai/generative-ai/pricing
+    gemini_input_price_per_million: float = 0.30
+    gemini_output_price_per_million: float = 2.50
+    gemini_context_window: int = 1_000_000
 
 
 # Singleton instance
